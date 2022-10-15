@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ object.category.title }}
+{% endblock %}
+
+{% block content %}
+<div class="bg-light p-5 rounded">
+      <div class="col-sm-8 py-5 mx-auto">
+        <h1 class="display-5 fw-normal">{{ object.title }}</h1>
+        <p class="fs-5">{{ object.description }}</p>
+          <a class="btn btn-primary" href="{% url 'prodtopack' object.pk %}" role="button">{{ label_for_but }}</a>
+        </p>
+    </div>
+    </div>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Last</th>
+      <th scope="col">Handle</th>
+    </tr>
+  </thead>
+    {% for key, value in  fields.items %}
+  <tbody>
+    <tr>
+      <td scope="col">{{key}}</td>
+      <td scope="col">{{value}}</td>
+    </tr>
+  </tbody>
+    {% endfor %}
+</table>
+{% endblock %}
