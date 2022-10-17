@@ -3,7 +3,8 @@ from django.db.models import Count, F
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import *
-from .forms import UserSingUp, UserSignIn
+from django.views import View
+from .forms import UserSingUp, UserSignIn, UserOrderForm
 
 def homepage(request):
     message = ''
@@ -117,7 +118,7 @@ def product_to_pocket(request, product_id):
         return redirect('signin')
     cur_user = request.user
     cur_product = get_object_or_404(Product, pk=product_id)
-    if not cur_product.remain_in_stock >0:
+    if not cur_product.remain_in_stock > 0:
         return redirect('home')
     if cur_user not in cur_product.ordered_by.all():
         cur_product.ordered_by.add(cur_user)
@@ -131,15 +132,41 @@ def product_to_pocket(request, product_id):
     return redirect(cur_product)
 
 
-def users_packet(request):
-    if not request.user.is_authenticated:
-        return redirect('signin')
-    cur_user = request.user
-    user_products = cur_user.product_set.all()
-    print(user_products)
-    context = {
-        'products':user_products,
-        'title':'Packet',
-    }
-    return render(request, 'mainroot/users_packet.html', context)
+class Users_products(View):
+    def get(self, request):
+        if not self.request.user.is_authenticated:
+            return redirect('signin')
+        cur_user = self.request.user
+        user_products = cur_user.product_set.all()
+        user_spents = count_spents(user_products)
+        context = {
+            'products':user_products,
+            'title':'Packet',
+            'user_spents': user_spents,
+        }
+        return render(self.request, 'mainroot/users_packet.html', context)
 
+
+class Ordering_view(View):
+    context = {
+        'title':'Ordering Process'
+    }
+    def get(self, request):
+        form = UserOrderForm()
+        self.context['form'] = form
+        return render(self.request, 'mainroot/ordering.html', self.context)
+
+    def post(self, request):
+        form = UserOrderForm(self.request.POST)
+        if form.is_valid():
+            order = Users_order.objects.create(**form.cleaned_data, user=self.request.user, full_price=count_spents(self.request.user.product_set.all()))
+            for item in self.request.user.product_set.all():
+                order.users_products.add(item)
+            order.save()
+            return redirect('home')
+
+def count_spents(query_set):
+    users_packet_price = 0
+    for item in query_set:
+        users_packet_price += int(item.price)
+    return users_packet_price

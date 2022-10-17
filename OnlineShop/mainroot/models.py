@@ -90,3 +90,22 @@ class Computer(Product):
 
     def __str__(self):
         return self.title
+
+
+class Transport(models.Model):
+    title = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.title
+
+
+class Users_order(models.Model):
+    users_fio = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    phone_number = models.CharField(max_length=50)
+    users_products = models.ManyToManyField(Product, blank=False)
+    users_address = models.CharField(max_length=100, blank=True, null=True)
+    dest_type = models.ForeignKey(Transport, blank=False,  null=True, on_delete=models.CASCADE)
+    full_price = models.IntegerField()
+
+

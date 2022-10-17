@@ -10,5 +10,6 @@ urlpatterns = [
     path('signin/', sign_in_user, name='signin'),
     path('signout/', signout, name = 'signout'),
     path('addtopacket/<int:product_id>', product_to_pocket, name='prodtopack'),
-    path('packet/', users_packet, name='packet'),
+    path('packet/', Users_products.as_view(), name='packet'),
+    path('odering/', Ordering_view.as_view(), name='ordering')
 ]
