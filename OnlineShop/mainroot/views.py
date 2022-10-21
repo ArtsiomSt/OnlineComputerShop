@@ -1,10 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Count, F
+from django.db.models import Count, F, Q, Max
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import *
 from django.views import View
-from .forms import UserSingUp, UserSignIn, UserOrderForm
+from .forms import UserSingUp, UserSignIn, UserOrderForm, FilterForm
+import random
+
 
 def homepage(request):
     message = ''
@@ -27,29 +29,21 @@ def detailpage(request, product_id):
     allowed_fields = {
         'title': 'Title',
         'freq': 'Frequency',
-        'socket':'Socket',
-        'c_memory':'Cash memory',
-        'weight':'Weight',
-        'memory_type':'Memory type',
-        'remain_stock':'In stock',
-        'v_memory':'Video memory'
+        'socket': 'Socket',
+        'c_memory': 'Cash memory',
+        'weight': 'Weight',
+        'memory_type': 'Memory type',
+        'remain_stock': 'In stock',
+        'v_memory': 'Video memory'
     }
     label = 'Add To Packet'
     current_product = get_object_or_404(Product, pk=product_id)
     if request.user.is_authenticated:
         if request.user in current_product.ordered_by.all():
             label = 'Delete from packet'
-    if current_product.category.id == 1:
-        object = Videocard.objects.get(pk=product_id)
-    elif current_product.category.id == 2:
-        object = Proccessor.objects.get(pk=product_id)
-    elif current_product.category.id == 4:
-        object = Computer.objects.get(pk=product_id)
-    elif current_product.category.id == 3:
-        object = Memory.objects.get(pk=product_id)
-    else:
-        object = current_product
-    fields_for_iter = object.__dict__
+    model = get_model_by_cat(current_product.category.title)
+    cur_object = model.objects.get(pk=product_id)
+    fields_for_iter = cur_object.__dict__
     fields_for_stats = {}
     for key, value in fields_for_iter.items():
         if key not in allowed_fields.keys():
@@ -59,19 +53,55 @@ def detailpage(request, product_id):
 
     context = {
         "fields": fields_for_stats,
-        "object": object,
+        "object": cur_object,
         "label_for_but": label,
     }
     return render(request, 'mainroot/detailview.html', context)
 
 
-def get_products_by_cat(request, cat_name):
-    list_of_products = Product.objects.filter(category__title=cat_name)
-    context = {
-        'title': Category.objects.get(title=cat_name).title,
-        'products': list_of_products,
-    }
-    return render(request, 'mainroot/products_by_cat.html', context)
+class Products_by_cat(View):
+    def get(self, request, cat_name):
+        list_of_products = Product.objects.filter(category__title=cat_name)
+        form = FilterForm()
+        context = {
+            'title': Category.objects.get(title=cat_name).title,
+            'products': list_of_products,
+            'form': form,
+        }
+        return render(request, 'mainroot/products_by_cat.html', context)
+
+    def post(self, request, cat_name):
+        model = get_model_by_cat(cat_name)
+        form = FilterForm(request.POST)
+        if form.is_valid():
+                empty_keys = []
+                for key, value in form.cleaned_data.items():
+                    if value is None:
+                        empty_keys.append(key)
+                for item in empty_keys:
+                    form.cleaned_data.pop(item)
+                manufact_form = form.cleaned_data.get('manufactor')
+                if manufact_form is not None:
+                    form.cleaned_data['manufactor'] = [manufact_form.pk]
+                all_manufs = list(map(lambda x: x['id'], Manufact.objects.values('id')))
+                max_price_in_prod_q = model.objects.values('price')
+                max_price_in_prod = 0
+                for item in max_price_in_prod_q:
+                    cur = int(item.get('price'))
+                    if cur>max_price_in_prod:
+                        max_price_in_prod = cur
+                print(max_price_in_prod)
+                print(form.cleaned_data)
+                list_of_products = model.objects.filter(Q(title__contains=form.cleaned_data.get('title', '')) & Q(
+                    manuf_id__in=form.cleaned_data.get('manufactor', all_manufs)) & Q(
+                    price__gt=form.cleaned_data.get('min_price', 0)) & Q(
+                    price__lt=form.cleaned_data.get('max_price', max_price_in_prod)))
+        context = {
+            'title': Category.objects.get(title=cat_name).title,
+            'products': list_of_products,
+            'form': form,
+        }
+        return render(request, 'mainroot/products_by_cat.html', context)
 
 
 def sing_up_user(request):
@@ -83,7 +113,7 @@ def sing_up_user(request):
     else:
         form = UserSingUp()
     context = {
-        'form':form,
+        'form': form,
     }
     return render(request, 'mainroot/registration.html', context)
 
@@ -94,7 +124,7 @@ def sign_in_user(request):
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
-            user = authenticate(username= username, password=password)
+            user = authenticate(username=username, password=password)
             try:
                 login(request, user)
                 return redirect('home')
@@ -103,7 +133,7 @@ def sign_in_user(request):
     else:
         form = UserSignIn()
     context = {
-        'form':form
+        'form': form
     }
     return render(request, 'mainroot/signin.html', context)
 
@@ -122,11 +152,11 @@ def product_to_pocket(request, product_id):
         return redirect('home')
     if cur_user not in cur_product.ordered_by.all():
         cur_product.ordered_by.add(cur_user)
-        cur_product.remain_in_stock = F('remain_in_stock')-1
+        cur_product.remain_in_stock = F('remain_in_stock') - 1
         cur_product.save()
     else:
         cur_product.ordered_by.remove(cur_user)
-        cur_product.remain_in_stock = F('remain_in_stock')+1
+        cur_product.remain_in_stock = F('remain_in_stock') + 1
         cur_product.save()
     print(cur_product.ordered_by.all())
     return redirect(cur_product)
@@ -140,8 +170,8 @@ class Users_products(View):
         user_products = cur_user.product_set.all()
         user_spents = count_spents(user_products)
         context = {
-            'products':user_products,
-            'title':'Packet',
+            'products': user_products,
+            'title': 'Packet',
             'user_spents': user_spents,
         }
         return render(self.request, 'mainroot/users_packet.html', context)
@@ -149,7 +179,7 @@ class Users_products(View):
 
 class Ordering_view(View):
     context = {
-        'title':'Ordering Process'
+        'title': 'Ordering Process'
     }
     def get(self, request):
         form = UserOrderForm()
@@ -159,14 +189,39 @@ class Ordering_view(View):
     def post(self, request):
         form = UserOrderForm(self.request.POST)
         if form.is_valid():
-            order = Users_order.objects.create(**form.cleaned_data, user=self.request.user, full_price=count_spents(self.request.user.product_set.all()))
+            order = Users_order.objects.create(**form.cleaned_data, user=self.request.user,
+                                               full_price=count_spents(self.request.user.product_set.all()))
             for item in self.request.user.product_set.all():
                 order.users_products.add(item)
             order.save()
             return redirect('home')
+
 
 def count_spents(query_set):
     users_packet_price = 0
     for item in query_set:
         users_packet_price += int(item.price)
     return users_packet_price
+
+
+def get_model_by_cat(cat):
+    models_dict = {
+        'Videocard': Videocard,
+        'Processor': Proccessor,
+        'Memory': Memory,
+        'PC': Computer,
+    }
+    return models_dict.get(cat, Product)
+
+
+def random_videocard():
+    for_title = ['RTX', 'GTX', 'GT']
+    for_title1 = ['20', '30', '40', '10']
+    for_title3 = ['30', '50', '70', '50 TI', '70', '90', '80', '80 TI']
+    category = Category.objects.get(title='Videocard')
+    manuf = Manufact.objects.all()
+    memory_type = ['GDDR6', 'GDDR5', 'GDDR4']
+    provs = Provider.objects.all()
+    for item in range(20):
+        title = for_title[random.randrange(0, len(for_title))] + ' ' + for_title1[random.randrange(0, len(for_title1))] + for_title3[random.randrange(0, len(for_title3))]
+        Videocard.objects.create(title=title, category=category, price=random.randrange(0,300), remain_in_stock=random.randrange(0,200), amount_ordered=0, weight=random.randrange(0,2000), provider=provs[random.randrange(0,len(provs))], manuf=manuf[random.randrange(0,len(manuf))], freq=random.randrange(3000,9000), v_memory=random.randrange(5,10), memory_type=memory_type[random.randrange(0,len(memory_type))])

@@ -108,4 +108,6 @@ class Users_order(models.Model):
     dest_type = models.ForeignKey(Transport, blank=False,  null=True, on_delete=models.CASCADE)
     full_price = models.IntegerField()
 
+    def __str__(self):
+        return self.user
 
