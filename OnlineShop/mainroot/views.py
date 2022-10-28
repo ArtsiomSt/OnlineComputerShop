@@ -28,16 +28,6 @@ def homepage(request):
 
 
 def detailpage(request, product_id):
-    allowed_fields = {
-        'title': 'Title',
-        'freq': 'Frequency',
-        'socket': 'Socket',
-        'c_memory': 'Cash memory',
-        'weight': 'Weight',
-        'memory_type': 'Memory type',
-        'remain_stock': 'In stock',
-        'v_memory': 'Video memory'
-    }
     label = 'Add To Packet'
     current_product = get_object_or_404(Product, pk=product_id)
     if request.user.is_authenticated:
@@ -45,16 +35,8 @@ def detailpage(request, product_id):
             label = 'Delete from packet'
     model = get_model_by_cat(current_product.category.title)
     cur_object = model.objects.get(pk=product_id)
-    fields_for_iter = cur_object.__dict__
-    fields_for_stats = {}
-    for key, value in fields_for_iter.items():
-        if key not in allowed_fields.keys():
-            continue
-        else:
-            fields_for_stats[allowed_fields[key]] = fields_for_iter[key]
-
     context = {
-        "fields": fields_for_stats,
+        "fields": cur_object.get_field_for_page(),
         "object": cur_object,
         "label_for_but": label,
     }
@@ -150,17 +132,7 @@ def product_to_pocket(request, product_id):
         return redirect('signin')
     cur_user = request.user
     cur_product = get_object_or_404(Product, pk=product_id)
-    if not cur_product.remain_in_stock > 0:
-        return redirect('home')
-    if cur_user not in cur_product.ordered_by.all():
-        cur_product.ordered_by.add(cur_user)
-        cur_product.remain_in_stock = F('remain_in_stock') - 1
-        cur_product.save()
-    else:
-        cur_product.ordered_by.remove(cur_user)
-        cur_product.remain_in_stock = F('remain_in_stock') + 1
-        cur_product.save()
-    print(cur_product.ordered_by.all())
+    cur_product.add_remove_user_to_pocket(cur_user)
     return redirect(cur_product)
 
 

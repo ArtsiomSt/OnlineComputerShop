@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import F
+from django.shortcuts import redirect
 from django.urls import reverse
-
+from .mixins import GetFieldsForPageMixin
 
 class Category(models.Model):
     title = models.CharField(max_length=50)
@@ -10,7 +12,7 @@ class Category(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('category',  kwargs={'cat_name':self.title})
+        return reverse('category', kwargs={'cat_name': self.title})
 
 
 class Provider(models.Model):
@@ -44,8 +46,22 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+    def add_remove_user_to_pocket(self, user_ordered):
+        if not int(self.remain_in_stock) > 0:
+            return redirect('home')
+        if user_ordered not in self.ordered_by.all():
+            self.ordered_by.add(user_ordered)
+            self.remain_in_stock = F('remain_in_stock') - 1
+            self.amount_ordered = F('amount_ordered') + 1
+            self.save()
+        else:
+            self.ordered_by.remove(user_ordered)
+            self.remain_in_stock = F('remain_in_stock') + 1
+            self.amount_ordered = F('amount_ordered') - 1
+            self.save()
+
     def get_absolute_url(self):
-        return reverse('product', kwargs={"product_id":self.pk})
+        return reverse('product', kwargs={"product_id": self.pk})
 
 
 class TechProduct(Product):
@@ -55,7 +71,7 @@ class TechProduct(Product):
     manuf = models.ForeignKey(Manufact, on_delete=models.CASCADE)
 
 
-class Videocard(TechProduct):
+class Videocard(GetFieldsForPageMixin, TechProduct):
     freq = models.IntegerField()
     v_memory = models.IntegerField()
     memory_type = models.CharField(max_length=30)
@@ -64,7 +80,7 @@ class Videocard(TechProduct):
         return self.title
 
 
-class Proccessor(TechProduct):
+class Proccessor(GetFieldsForPageMixin, TechProduct):
     freq = models.IntegerField()
     socket = models.CharField(max_length=30)
     c_memory = models.IntegerField()
@@ -73,7 +89,7 @@ class Proccessor(TechProduct):
         return self.title
 
 
-class Memory(TechProduct):
+class Memory(GetFieldsForPageMixin,TechProduct):
     size = models.IntegerField()
     mem_type = models.IntegerField()
 
@@ -81,7 +97,7 @@ class Memory(TechProduct):
         return self.title
 
 
-class Computer(Product):
+class Computer(GetFieldsForPageMixin, Product):
     gabs = models.CharField(max_length=30)
     manuf = models.ForeignKey(Manufact, on_delete=models.CASCADE)
     videocard = models.ForeignKey(Videocard, on_delete=models.CASCADE)
@@ -105,9 +121,8 @@ class Users_order(models.Model):
     phone_number = models.CharField(max_length=50)
     users_products = models.ManyToManyField(Product, blank=False)
     users_address = models.CharField(max_length=100, blank=True, null=True)
-    dest_type = models.ForeignKey(Transport, blank=False,  null=True, on_delete=models.CASCADE)
+    dest_type = models.ForeignKey(Transport, blank=False, null=True, on_delete=models.CASCADE)
     full_price = models.IntegerField()
 
     def __str__(self):
         return self.user
-
