@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Last</th>
+      <th scope="col">Handle</th>
+      <th scope="col">Handle</th>
+    </tr>
+  </thead>
+    {% for item in ordered_products %}
+  <tbody>
+    <tr>
+      <td scope="col">{{item.title}}</td>
+      <td scope="col">{{item.users_amount}}</td>
+      <td scope="col">{{item.price}}</td>
+    </tr>
+  </tbody>
+    {% endfor %}
+</table>
+<hr>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Last</th>
+      <th scope="col">Handle</th>
+    </tr>
+  </thead>
+    {% for key, value in  user_spent.items %}
+  <tbody>
+    <tr>
+      <td scope="col">{{key}}</td>
+      <td scope="col">{{value}}</td>
+    </tr>
+  </tbody>
+    {% endfor %}
+</table>
+<h3> All users spents {{ sum_price }}</h3>
+{% endblock %}

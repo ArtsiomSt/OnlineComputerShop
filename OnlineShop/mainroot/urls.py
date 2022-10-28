@@ -11,5 +11,6 @@ urlpatterns = [
     path('signout/', signout, name = 'signout'),
     path('addtopacket/<int:product_id>', product_to_pocket, name='prodtopack'),
     path('packet/', Users_products.as_view(), name='packet'),
-    path('odering/', Ordering_view.as_view(), name='ordering')
+    path('odering/', Ordering_view.as_view(), name='ordering'),
+    path('adminpanel/', AdminPanel.as_view(), name='adminka')
 ]

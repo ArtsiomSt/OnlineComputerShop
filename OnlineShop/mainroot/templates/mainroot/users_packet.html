@@ -13,6 +13,7 @@
         <a class="btn btn-lg btn-primary" href="{{ item.get_absolute_url }}" role="button">{{ item.price }}</a>
       </div>
     </main>
+    {{ item.category.title }}
     <hr>
     {% empty %}
     <h1>There are no products there</h1>
