@@ -70,6 +70,9 @@ class TechProduct(Product):
     description = models.TextField(blank=True)
     manuf = models.ForeignKey(Manufact, on_delete=models.CASCADE)
 
+    def __repr__(self):
+        return f"Subclass object:{self.__class__}"
+
 
 class Videocard(GetFieldsForPageMixin, TechProduct):
     freq = models.IntegerField()
@@ -87,6 +90,10 @@ class Proccessor(GetFieldsForPageMixin, TechProduct):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        verbose_name = 'Proccessor'
+        verbose_name_plural = 'Proccessors'
 
 
 class Memory(GetFieldsForPageMixin,TechProduct):

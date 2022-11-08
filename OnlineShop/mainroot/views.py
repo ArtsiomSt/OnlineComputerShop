@@ -155,7 +155,6 @@ class Ordering_view(View):
     context = {
         'title': 'Ordering Process'
     }
-
     def get(self, request):
         form = UserOrderForm()
         self.context['form'] = form
@@ -190,6 +189,7 @@ class AdminPanel(AdminUserMixin, View):
             'title': 'AdminPanel',
             'sum_price': sum_price_of_orders,
             'user_spent': user_and_spents,
+            'urltest': 'images/forstatic.png',
         }
         return render(request, 'mainroot/adminpanel.html', context)
 

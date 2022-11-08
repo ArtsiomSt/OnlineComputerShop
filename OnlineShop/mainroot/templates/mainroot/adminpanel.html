@@ -1,4 +1,8 @@
+
 {% extends 'base.html' %}
+
+{% load static %}
+
 
 {% block title %}
 {{ title }}
@@ -41,4 +45,6 @@
     {% endfor %}
 </table>
 <h3> All users spents {{ sum_price }}</h3>
+
+<!--<img src="{% static urltest %}" alt="">-->
 {% endblock %}
