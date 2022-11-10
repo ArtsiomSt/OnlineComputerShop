@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Users_order, Manufact
+from .models import Users_order, Manufact, Product
 
 
 class UserSingUp(UserCreationForm):
@@ -26,3 +26,9 @@ class FilterForm(forms.Form):
     title = forms.CharField(max_length=50, required=False)
     manufactor = forms.ModelChoiceField(queryset=Manufact.objects.all(), required=False)
     title = forms.CharField(max_length=50, required=False)
+
+
+class EditForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['title', 'price', 'remain_in_stock']

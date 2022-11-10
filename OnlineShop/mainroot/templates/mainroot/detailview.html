@@ -29,4 +29,9 @@
   </tbody>
     {% endfor %}
 </table>
+
+{% if request.user.is_staff %}
+<a href="{% url 'dropprod' object.pk %}"><button>Delete this product</button></a>
+<a href="{% url 'editproduct' object.pk %}"><button>Edit info about this product</button></a>
+{% endif %}
 {% endblock %}

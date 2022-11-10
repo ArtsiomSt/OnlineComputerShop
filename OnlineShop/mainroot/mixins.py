@@ -30,4 +30,5 @@ class GetFieldsForPageMixin():
                 continue
             else:
                 fields_for_stats[allowed_fields[key]] = fields_for_iter[key]
+        fields_for_stats['Price'] = self.__dict__['price']
         return fields_for_stats

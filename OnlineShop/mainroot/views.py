@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import *
 from django.views import View
-from .forms import UserSingUp, UserSignIn, UserOrderForm, FilterForm
+from .forms import UserSingUp, UserSignIn, UserOrderForm, FilterForm, EditForm
 import random
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import AdminUserMixin
@@ -155,6 +155,7 @@ class Ordering_view(View):
     context = {
         'title': 'Ordering Process'
     }
+
     def get(self, request):
         form = UserOrderForm()
         self.context['form'] = form
@@ -192,6 +193,40 @@ class AdminPanel(AdminUserMixin, View):
             'urltest': 'images/forstatic.png',
         }
         return render(request, 'mainroot/adminpanel.html', context)
+
+
+def dropproduct(request, product_id):
+    if not request.user.is_staff:
+        raise 403
+    try:
+        Product.objects.filter(pk=product_id).delete()
+    except:
+        raise 404
+    return redirect('home')
+
+
+class EditProduct(AdminUserMixin, View):
+    def get(self, request, product_id):
+        cur_product = get_object_or_404(Product, pk=product_id)
+        form = EditForm(initial={'title': cur_product.title,
+                                 'price': cur_product.price,
+                                 'remain_in_stock': cur_product.remain_in_stock,
+                                 })
+        context = {
+            'title': 'Edit',
+            'form': form,
+        }
+        return render(request, 'mainroot/edit.html', context)
+
+    def post(self, request, product_id):
+        cur_product = get_object_or_404(Product, pk=product_id)
+        form = EditForm(request.POST)
+        if form.is_valid():
+            cur_product.title = form.cleaned_data.get('title', 'NoTitle')
+            cur_product.price = form.cleaned_data.get('price', 0)
+            cur_product.remain_in_stock = form.cleaned_data.get('remain_in_stock', 0)
+            cur_product.save()
+        return redirect(cur_product)
 
 
 def count_spents(query_set):
