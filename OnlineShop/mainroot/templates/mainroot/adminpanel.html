@@ -12,9 +12,9 @@
 <table class="table">
   <thead>
     <tr>
-      <th scope="col">Last</th>
-      <th scope="col">Handle</th>
-      <th scope="col">Handle</th>
+      <th scope="col">Product</th>
+      <th scope="col">Ordered</th>
+      <th scope="col">Summary price</th>
     </tr>
   </thead>
     {% for item in ordered_products %}
@@ -31,8 +31,8 @@
 <table class="table">
   <thead>
     <tr>
-      <th scope="col">Last</th>
-      <th scope="col">Handle</th>
+      <th scope="col">User</th>
+      <th scope="col">Spents</th>
     </tr>
   </thead>
     {% for key, value in  user_spent.items %}
@@ -40,6 +40,24 @@
     <tr>
       <td scope="col">{{key}}</td>
       <td scope="col">{{value}}</td>
+    </tr>
+  </tbody>
+    {% endfor %}
+</table>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">User</th>
+      <th scope="col">Order Price</th>
+      <th scope="col">Phone</th>
+    </tr>
+  </thead>
+    {% for username, price, phone in orders %}
+  <tbody>
+    <tr>
+      <td scope="col">{{ username }}</td>
+      <td scope="col">{{ price }}</td>
+      <td scope="col">{{ phone }}</td>
     </tr>
   </tbody>
     {% endfor %}

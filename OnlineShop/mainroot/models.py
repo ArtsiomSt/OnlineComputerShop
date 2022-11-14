@@ -132,4 +132,4 @@ class Users_order(models.Model):
     full_price = models.IntegerField()
 
     def __str__(self):
-        return self.user
+        return self.users_fio

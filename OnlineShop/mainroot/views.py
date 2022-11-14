@@ -23,6 +23,7 @@ def homepage(request):
         "message": message,
         "products": Product.objects.filter(remain_in_stock__gt=0),
         'categories': cats_for_template,
+        "title": 'Main'
     }
     return render(request, 'mainroot/index.html', context)
 
@@ -45,12 +46,19 @@ def detailpage(request, product_id):
 
 class Products_by_cat(View):
     def get(self, request, cat_name):
+        cats = Category.objects.annotate(num_of_prod=Count('product'))
+        cats_for_template = []
+        for item in cats:
+            if item.num_of_prod:
+                cats_for_template.append(item)
+        self.cats = cats_for_template
         list_of_products = Product.objects.filter(category__title=cat_name)
         form = FilterForm()
         context = {
             'title': Category.objects.get(title=cat_name).title,
             'products': list_of_products,
             'form': form,
+            'categories': cats_for_template,
         }
         return render(request, 'mainroot/products_by_cat.html', context)
 
@@ -84,6 +92,7 @@ class Products_by_cat(View):
             'title': Category.objects.get(title=cat_name).title,
             'products': list_of_products,
             'form': form,
+            # 'categories': self.cats,
         }
         return render(request, 'mainroot/products_by_cat.html', context)
 
@@ -111,8 +120,9 @@ def sign_in_user(request):
             user = authenticate(username=username, password=password)
             try:
                 login(request, user)
-                return redirect('home')
+                return redirect('/?message=Authentocated successfully')
             except:
+                print('Login Failed')
                 return redirect('signin')
     else:
         form = UserSignIn()
@@ -163,13 +173,18 @@ class Ordering_view(View):
 
     def post(self, request):
         form = UserOrderForm(self.request.POST)
+        users_products = self.request.user.product_set.all()
         if form.is_valid():
             order = Users_order.objects.create(**form.cleaned_data, user=self.request.user,
-                                               full_price=count_spents(self.request.user.product_set.all()))
+                                               full_price=count_spents(users_products))
             for item in self.request.user.product_set.all():
                 order.users_products.add(item)
             order.save()
+            for product in users_products:
+                product.ordered_by.remove(request.user)
             return redirect('home')
+        else:
+            return redirect('ordering')
 
 
 class AdminPanel(AdminUserMixin, View):
@@ -185,19 +200,27 @@ class AdminPanel(AdminUserMixin, View):
             for prod in item.product_set.all():
                 users_sum += int(prod.price)
             user_and_spents[item.username] = users_sum
+        orderes = Users_order.objects.all().select_related()
+        dict_of_user_and_orders = []
+        for order in orderes:
+            dict_of_user_and_orders.append((order.user.username,
+                                            order.full_price,
+                                            order.phone_number,
+                                            ))
         context = {
             'ordered_products': products,
             'title': 'AdminPanel',
             'sum_price': sum_price_of_orders,
             'user_spent': user_and_spents,
             'urltest': 'images/forstatic.png',
+            'orders': dict_of_user_and_orders,
         }
         return render(request, 'mainroot/adminpanel.html', context)
 
 
 def dropproduct(request, product_id):
     if not request.user.is_staff:
-        raise 403
+        return redirect('home')
     try:
         Product.objects.filter(pk=product_id).delete()
     except:
