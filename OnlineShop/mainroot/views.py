@@ -35,7 +35,7 @@ def detailpage(request, product_id):
         if request.user in current_product.ordered_by.all():
             label = 'Delete from packet'
     model = get_model_by_cat(current_product.category.title)
-    cur_object = model.objects.get(pk=product_id)
+    cur_object = model.objects.select_related().get(pk=product_id)
     context = {
         "fields": cur_object.get_field_for_page(),
         "object": cur_object,
@@ -286,3 +286,43 @@ def random_videocard():
                                  manuf=manuf[random.randrange(0, len(manuf))], freq=random.randrange(3000, 9000),
                                  v_memory=random.randrange(5, 10),
                                  memory_type=memory_type[random.randrange(0, len(memory_type))])
+
+
+def random_processor():
+    for_title = ['Intel', 'AMD']
+    for_title1 = ['Core ', 'Ryzen ']
+    for_title3 = ['i3', 'i5', 'i7', 'i9', '1600', '2600', '3600', '3900', '2900', '2100']
+    category = Category.objects.get(title='Processor')
+    manuf = Manufact.objects.all()
+    memory_type = ['3', '6', '9']
+    provs = Provider.objects.all()
+    sockets = ['AM3', 'AM4', 'LGA1151', 'LGA1155', 'LGA2011', 'LGA1151v2']
+    for item in range(20):
+        title = for_title[random.randrange(0, len(for_title))] + ' ' + for_title1[
+            random.randrange(0, len(for_title1))] + for_title3[random.randrange(0, len(for_title3))]
+        Proccessor.objects.create(title=title, category=category, price=random.randrange(0, 300),
+                                  remain_in_stock=random.randrange(0, 200), amount_ordered=0,
+                                  weight=random.randrange(0, 2000), provider=provs[random.randrange(0, len(provs))],
+                                  manuf=manuf[random.randrange(0, len(manuf))], freq=random.randrange(3000, 5000, 100),
+                                  c_memory=random.randrange(5, 10),
+                                  socket=sockets[random.randrange(0, len(sockets))])
+
+
+def random_memory():
+    for_title = ['Samsung', 'Micron', 'Crucial']
+    for_title1 = ['Evo ', 'SSD ']
+    for_title3 = ['980', '970', '950', '40', '30', '80', 'MM1', 'MM3', 'MM5', 'MM4']
+    category = Category.objects.get(title='Memory')
+    manuf = Manufact.objects.filter(pk__gt=3)
+    memory_type = ['SSD', 'HDD', 'RAM']
+    connections = ['M2', 'NVME', 'SATA']
+    provs = Provider.objects.all()
+    for item in range(20):
+        title = for_title[random.randrange(0, len(for_title))] + ' ' + for_title1[
+            random.randrange(0, len(for_title1))] + for_title3[random.randrange(0, len(for_title3))]
+        Memory.objects.create(title=title, category=category, price=random.randrange(0, 300),
+                              remain_in_stock=random.randrange(0, 200), amount_ordered=0,
+                              weight=random.randrange(0, 2000), provider=provs[random.randrange(0, len(provs))],
+                              manuf=manuf[random.randrange(0, len(manuf))], size=random.randrange(1000, 32000, 1000),
+                              mem_type=memory_type[random.randrange(0, len(memory_type))],
+                              connection_type=connections[random.randrange(0, len(connections))])

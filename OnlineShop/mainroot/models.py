@@ -98,7 +98,9 @@ class Proccessor(GetFieldsForPageMixin, TechProduct):
 
 class Memory(GetFieldsForPageMixin,TechProduct):
     size = models.IntegerField()
-    mem_type = models.IntegerField()
+    mem_type = models.CharField(max_length=100, blank=True, null=True)
+    connection_type = models.CharField(max_length=100, blank=True, null=True)
+
 
     def __str__(self):
         return self.title
@@ -112,6 +114,9 @@ class Computer(GetFieldsForPageMixin, Product):
     memory_p = models.ForeignKey(Memory, on_delete=models.CASCADE)
 
     def __str__(self):
+        return self.title
+
+    def __repr__(self):
         return self.title
 
 
