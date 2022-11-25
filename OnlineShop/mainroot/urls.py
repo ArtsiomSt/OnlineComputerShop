@@ -15,4 +15,5 @@ urlpatterns = [
     path('adminpanel/', AdminPanel.as_view(), name='adminka'),
     path('deleteproduct/<int:product_id>', dropproduct, name='dropprod'),
     path('editproduct/<int:product_id>', EditProduct.as_view(), name='editproduct'),
+    path('createpc/', CreatePCView.as_view(), name='createpc')
 ]

@@ -2,9 +2,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.db.models import Count, F, Q, Max, Sum
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic.base import ContextMixin
+
 from .models import *
 from django.views import View
-from .forms import UserSingUp, UserSignIn, UserOrderForm, FilterForm, EditForm
+from .forms import UserSingUp, UserSignIn, UserOrderForm, FilterForm, EditForm, CreateComputerForm
 import random
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import AdminUserMixin
@@ -250,6 +252,33 @@ class EditProduct(AdminUserMixin, View):
             cur_product.remain_in_stock = form.cleaned_data.get('remain_in_stock', 0)
             cur_product.save()
         return redirect(cur_product)
+
+
+class CreatePCView(ContextMixin, View):
+    extra_context = {'title': 'Creating PC'}
+
+    def get(self, request):
+        form = CreateComputerForm()
+        context = {
+            'form':form
+        }
+        return render(request, 'mainroot/createcomputer.html', self.get_context_data(context=context))
+
+    def post(self, request):
+        form = CreateComputerForm(request.POST)
+        pc = form.save()
+        print('yes')
+        return redirect(pc)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        for key, value in kwargs.items():
+            if type(value) == dict:
+                for keyn, valuen in value.items():
+                    context[keyn] = valuen
+            else:
+                context[key] = value
+        return context
 
 
 def count_spents(query_set):
